@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Poze APIA 2026</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+  #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; }
+  .panel {
+    position: absolute; top: 10px; right: 10px; z-index: 1000;
+    background: #fff; border-radius: 8px; box-shadow: 0 1px 6px rgba(0,0,0,.3);
+    max-height: 90vh; overflow-y: auto; width: 230px; font-size: 13px;
+  }
+  .panel h3 { margin: 0; padding: 10px 12px; font-size: 14px; border-bottom: 1px solid #eee; }
+  .panel .row { display: flex; align-items: center; gap: 6px; padding: 4px 12px; cursor: pointer; }
+  .panel .row:hover { background: #f5f5f5; }
+  .panel .row .count { margin-left: auto; color: #888; font-size: 11px; }
+  .panel .actions { padding: 6px 12px; border-top: 1px solid #eee; display: flex; gap: 8px; }
+  .panel .actions button { font-size: 11px; padding: 3px 8px; cursor: pointer; border: 1px solid #ccc; border-radius: 4px; background: #fafafa; }
+  .swatch { width: 10px; height: 10px; border-radius: 50%; background: #d9534f; flex-shrink: 0; }
+  .leaflet-popup-content a { color: #1a73e8; }
+  .total { padding: 8px 12px; color: #555; border-top: 1px solid #eee; font-size: 12px; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="panel">
+  <h3>Poze APIA 2026</h3>
+  <div class="actions">
+    <button id="showAll">Arată tot</button>
+    <button id="hideAll">Ascunde tot</button>
+  </div>
+  <div id="layerList"></div>
+  <div class="total" id="totalCount"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="data.geojson.js"></script>
+<script>
+const map = L.map('map', { preferCanvas: true });
+
+const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+  attribution: 'Tiles &copy; Esri', maxZoom: 20
+});
+const streets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap contributors', maxZoom: 19
+});
+satellite.addTo(map);
+L.control.layers({ 'Satelit': satellite, 'Străzi': streets }, null, { position: 'bottomleft' }).addTo(map);
+
+const cameraIcon = L.divIcon({
+  className: '',
+  html: '<div style="width:14px;height:14px;border-radius:50%;background:#d9534f;border:2px solid #fff;box-shadow:0 0 2px rgba(0,0,0,.6);"></div>',
+  iconSize: [14, 14], iconAnchor: [7, 7]
+});
+
+// group features by folder
+const byFolder = {};
+for (const f of MAP_DATA.features) {
+  const key = f.properties.folder;
+  (byFolder[key] = byFolder[key] || []).push(f);
+}
+const folderNames = Object.keys(byFolder).sort();
+
+const clusterGroups = {};
+const allBounds = [];
+const layerListEl = document.getElementById('layerList');
+
+for (const folder of folderNames) {
+  const cluster = L.markerClusterGroup({ maxClusterRadius: 60, disableClusteringAtZoom: 17 });
+  for (const feat of byFolder[folder]) {
+    const [lon, lat] = feat.geometry.coordinates;
+    const m = L.marker([lat, lon], { icon: cameraIcon });
+    const name = feat.properties.name;
+    const link = feat.properties.link;
+    m.bindPopup(`<b>${name}</b><br><a href="${link}" target="_blank" rel="noopener">Deschide poza in Drive</a>`);
+    cluster.addLayer(m);
+    allBounds.push([lat, lon]);
+  }
+  clusterGroups[folder] = cluster;
+  cluster.addTo(map);
+
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.innerHTML = `<input type="checkbox" checked data-folder="${folder}"><span class="swatch"></span><span>${folder}</span><span class="count">${byFolder[folder].length}</span>`;
+  layerListEl.appendChild(row);
+}
+
+layerListEl.addEventListener('change', (e) => {
+  const cb = e.target;
+  if (cb.matches('input[type=checkbox]')) {
+    const folder = cb.getAttribute('data-folder');
+    if (cb.checked) clusterGroups[folder].addTo(map);
+    else map.removeLayer(clusterGroups[folder]);
+  }
+});
+
+document.getElementById('showAll').onclick = () => {
+  layerListEl.querySelectorAll('input[type=checkbox]').forEach(cb => { cb.checked = true; clusterGroups[cb.dataset.folder].addTo(map); });
+};
+document.getElementById('hideAll').onclick = () => {
+  layerListEl.querySelectorAll('input[type=checkbox]').forEach(cb => { cb.checked = false; map.removeLayer(clusterGroups[cb.dataset.folder]); });
+};
+
+document.getElementById('totalCount').textContent = MAP_DATA.features.length + ' poze in total, ' + folderNames.length + ' zile';
+
+if (allBounds.length) {
+  map.fitBounds(allBounds, { padding: [30, 30] });
+} else {
+  map.setView([45.9, 24.9], 7);
+}
+</script>
+</body>
+</html>
