@@ -9,6 +9,11 @@ Utilizatorul (nic.mol@gmail.com) face poze cu GPS (telefon/dispozitiv folosind u
 Scopul: extrage coordonatele GPS din EXIF-ul fiecărei poze și le pune ca puncte pe o hartă Leaflet,
 alături de poligoanele parcelelor APIA (context: agricultură / subvenții APIA).
 
+**Folderul-părinte din Drive** care conține toate folderele zilnice de poze:
+`1oRkDH1j18KX5K9DZZdcGhJH9kWyYXRNK` ("poze APIA 2026", owner `pozeapia2026@gmail.com`, partajat cu
+`nic.mol@gmail.com`). Caută foldere noi `YYMMDD` direct ca fii ai acestui folder (`parentId = '...'`),
+nu e nevoie de o căutare mai largă în tot Drive-ul.
+
 ## Structura repo-ului
 
 - `index.html` — pagina hărții (Leaflet). Citește `MAP_DATA` din `data.geojson.js` și parcelele din
@@ -31,9 +36,9 @@ alături de poligoanele parcelelor APIA (context: agricultură / subvenții APIA
 
 ## Flux de lucru pentru poze noi (de urmat de orice sesiune Claude viitoare)
 
-1. Găsește în Google Drive folderul/folderele de dată mai noi decât ultimul procesat (caută foldere
-   `YYMMDD` create recent; folderul acesta era `1YWCHtMMZUMqZ4bkc7M2UP-X4BBYbbtea` pentru `260902`, dar
-   ID-ul diferă la fiecare folder nou — trebuie căutat, nu presupus).
+1. Găsește în Google Drive folderul/folderele de dată mai noi decât ultimul procesat: listează fiii
+   folderului-părinte `1oRkDH1j18KX5K9DZZdcGhJH9kWyYXRNK` (vezi mai sus) și alege cele cu nume `YYMMDD`
+   mai mari decât ultimul procesat. ID-ul folderului zilnic diferă de fiecare dată — nu-l presupune.
 2. Descarcă fiecare `.jpg` din folder (conținutul vine ca bază64 într-un fișier JSON local când e mare;
    decodează cu `base64` în Python pentru a obține fișierul `.jpg` propriu-zis).
 3. Extrage `(lat, lon)` din EXIF cu `scripts/gps_exif.py` (sau echivalent, dacă mașina curentă are
@@ -45,6 +50,18 @@ alături de poligoanele parcelelor APIA (context: agricultură / subvenții APIA
 5. Commit + push pe `main`. GitHub Pages se rebuild-uiește automat din `main`.
 6. Actualizează secțiunea "Ultimul folder procesat" din acest fișier cu noua dată, ca reper pentru
    data viitoare.
+
+## Decizii deja luate (nu re-întreba, doar aplică)
+
+- **Repo-ul e public, intenționat.** Verificat explicit pe 2026-09-02 (tot istoricul git, toate
+  fișierele): niciun token/cheie API/secret, niciun CNP/telefon/IBAN al proprietarului, niciun fișier
+  foto original comis. Singura expunere reală e că linkurile Drive din `data.geojson.js` duc la poze
+  setate "oricine cu linkul poate vizualiza" — asumat de proprietar, nu semnala ca problemă din nou
+  decât dacă apare ceva nou (ex. un fișier cu date personale ajunge din greșeală în repo).
+- Mediul de rulare Claude Code (mașină virtuală Debian 13 sub Windows 10) e considerat efemer —
+  fișierele locale/scratchpad și memoria locală Claude NU sunt de încredere să persiste între sesiuni.
+  **Acest repo (`CLAUDE.md` + `scripts/`) e singura sursă de adevăr persistentă** pentru a relua
+  proiectul; orice informație nouă utilă pentru continuare trebuie scrisă aici, nu doar reținută local.
 
 ## Notă despre mediul de lucru
 
