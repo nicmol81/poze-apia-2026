@@ -1,7 +1,24 @@
 #!/usr/bin/env python3
 """Minimal pure-python EXIF GPS extractor (no external deps)."""
+import re
 import struct
 import sys
+
+# Unele poze (Conota/spotLens, vazut prima data pe 260917/260918) scriu un GPS IFD
+# in EXIF cu toate valorile zero (placeholder nescris corect), dar coordonatele
+# reale sunt prezente in blocul XMP alaturat, ca atribute decimale semnate:
+# Iptc4xmpExt:GPSLatitude="44.88..." Iptc4xmpExt:GPSLongitude="24.28...".
+# Fallback-ul de mai jos citeste XMP-ul cand EXIF-ul lipseste sau e (0.0, 0.0).
+_XMP_LAT_RE = re.compile(rb'GPSLatitude="(-?[0-9.]+)"')
+_XMP_LON_RE = re.compile(rb'GPSLongitude="(-?[0-9.]+)"')
+
+
+def _get_gps_xmp(data):
+    m_lat = _XMP_LAT_RE.search(data)
+    m_lon = _XMP_LON_RE.search(data)
+    if not m_lat or not m_lon:
+        return None
+    return float(m_lat.group(1)), float(m_lon.group(1))
 
 TYPE_SIZES = {1:1, 2:1, 3:2, 4:4, 5:8, 6:1, 7:1, 8:2, 9:4, 10:8, 11:4, 12:8}
 
@@ -32,9 +49,7 @@ def read_rationals(data, typ, cnt, off, endian):
 def read_ascii(data, cnt, off):
     return data[off:off + cnt].split(b'\x00')[0].decode('ascii', 'replace')
 
-def get_gps(path):
-    with open(path, 'rb') as f:
-        data = f.read(2 * 1024 * 1024)  # EXIF is near the start
+def _get_gps_exif(data):
     if data[0:2] != b'\xff\xd8':
         return None
     p = 2
@@ -89,6 +104,17 @@ def get_gps(path):
     lat = dms_to_deg(lat_vals, lat_ref)
     lon = dms_to_deg(lon_vals, lon_ref)
     return lat, lon
+
+
+def get_gps(path):
+    with open(path, 'rb') as f:
+        data = f.read(2 * 1024 * 1024)  # EXIF/XMP sunt aproape de inceputul fisierului
+    result = _get_gps_exif(data)
+    if result is None or result == (0.0, 0.0):
+        xmp_result = _get_gps_xmp(data)
+        if xmp_result is not None:
+            return xmp_result
+    return result
 
 if __name__ == '__main__':
     for path in sys.argv[1:]:

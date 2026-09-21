@@ -35,9 +35,9 @@ nu e nevoie de o căutare mai largă în tot Drive-ul.
 
 ## Ultimul folder procesat
 
-**260902** (2 sept 2026) — complet procesat, toate cele 47 de poze din folder sunt pe hartă. Vezi git
-log pentru istoricul exact al folderelor incluse deja (mesajele de commit sunt de forma
-`actualizare date: 260902` sau listează mai multe date deodată).
+**260918** (18 sept 2026) — complet procesat, toate cele 52 de poze din folder sunt pe hartă (260917 la
+fel, 56 poze). Vezi git log pentru istoricul exact al folderelor incluse deja (mesajele de commit sunt de
+forma `actualizare date: 260902` sau listează mai multe date deodată).
 
 ## Flux de lucru pentru poze noi (de urmat de orice sesiune Claude viitoare)
 
@@ -107,6 +107,26 @@ sau linie de comandă: `python3 scripts/fetch_gps_fast.py <fileId1> <fileId2> ..
   `tempfile.NamedTemporaryFile`, deci problema asta nu ar trebui să mai apară, dar e o lecție utilă
   dacă apare vreodată un simptom similar (eșec brusc, uniform, pe toate fișierele deodată → suspectează
   întâi propriul cod/path, nu neapărat un blocaj extern).
+
+## Bug descoperit pe 21 sept 2026: GPS zero in EXIF, coordonate reale in XMP (foldere 260917/260918)
+
+La procesarea 260917/260918, `fetch_gps_fast.py`/`gps_exif.py` întorcea `(0.0, 0.0)` pentru toate pozele,
+deși GPS IFD-ul EXIF era prezent (tag-urile GPS existau, structural corecte). Cauza: aplicația foto
+(o versiune mai nouă, se pare bazată pe "spotLens"/Conota, telefon Pixel 9a) scrie GPS IFD-ul din EXIF
+ca un placeholder cu toate valorile zero (inclusiv `GPSLatitudeRef`/`GPSLongitudeRef` goale), dar scrie
+coordonatele *reale* într-un bloc XMP separat (segment JPEG `APP1` cu semnătura `http://ns.adobe.com/xap/1.0/`,
+imediat după segmentul Exif), ca atribute zecimale semnate:
+`Iptc4xmpExt:GPSLatitude="44.88..."` / `Iptc4xmpExt:GPSLongitude="24.28..."`.
+
+**Fix aplicat în `scripts/gps_exif.py`:** `get_gps()` încearcă întâi parsarea EXIF ca înainte; dacă
+rezultatul e `None` sau exact `(0.0, 0.0)`, cade pe un fallback regex simplu peste primii 2 MB ai
+fișierului care caută `GPSLatitude="..."` / `GPSLongitude="..."` (funcția `_get_gps_xmp`). Nu s-a schimbat
+nimic în `fetch_gps_fast.py` — fallback-ul funcționează automat pe același prefix de 256 KB, fiindcă
+blocul XMP e tot lângă începutul fișierului, la fel ca EXIF-ul.
+
+Dacă `fetch_gps_fast.py` întoarce iar `(0.0, 0.0)` sau `None` pentru multe poze deodată pe un folder
+viitor, verifică întâi ipoteza asta (EXIF placeholder + XMP cu coordonate reale) înainte să presupui
+altă cauză — descarcă un prefix cu `curl -r 0-262143` și caută manual `GPSLatitude=` în el.
 
 ## Decizii deja luate (nu re-întreba, doar aplică)
 
