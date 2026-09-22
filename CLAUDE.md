@@ -35,9 +35,15 @@ nu e nevoie de o căutare mai largă în tot Drive-ul.
 
 ## Ultimul folder procesat
 
-**260918** (18 sept 2026) — complet procesat, toate cele 52 de poze din folder sunt pe hartă (260917 la
-fel, 56 poze). Vezi git log pentru istoricul exact al folderelor incluse deja (mesajele de commit sunt de
-forma `actualizare date: 260902` sau listează mai multe date deodată).
+**260922** (22 sept 2026) — procesat pe 22 sept 2026. Poze "conota" (`YYYYMMDD_HHMMSS.jpg`): 260917 (56),
+260918 (52) și 260922 (9) sunt toate pe hartă. **Important:** cele trei foldere conțin acum și un al
+doilea tip de poze, format `DD-MM-2026_HH-MM-SS_RO<parcela>_..._COPIE.jpg`, owner `vlgps659@gmail.com`
+(altă unealtă, nu telefonul utilizatorului) — vezi secțiunea de bug de mai jos ("22 sept 2026: poze COPIE
+fără GPS recuperabil") înainte să presupui că astea trebuie doar procesate ca de obicei: la data asta,
+NICIUNA din cele 110 (260917) + 105 (260918) + 20 (260922) poze COPIE unice n-a putut fi pusă pe hartă,
+fiindcă GPS-ul lor era complet zero, fără fallback XMP. Vezi git log pentru istoricul exact al folderelor
+incluse deja (mesajele de commit sunt de forma `actualizare date: 260902` sau listează mai multe date
+deodată).
 
 ## Flux de lucru pentru poze noi (de urmat de orice sesiune Claude viitoare)
 
@@ -127,6 +133,52 @@ blocul XMP e tot lângă începutul fișierului, la fel ca EXIF-ul.
 Dacă `fetch_gps_fast.py` întoarce iar `(0.0, 0.0)` sau `None` pentru multe poze deodată pe un folder
 viitor, verifică întâi ipoteza asta (EXIF placeholder + XMP cu coordonate reale) înainte să presupui
 altă cauză — descarcă un prefix cu `curl -r 0-262143` și caută manual `GPSLatitude=` în el.
+
+## Bug descoperit pe 22 sept 2026: poze COPIE fără GPS recuperabil (nici EXIF, nici XMP)
+
+La procesarea 260917/260918/260922 s-a găsit, în plus față de pozele "conota" obișnuite, un al doilea
+set de poze în aceleași foldere: nume `DD-MM-2026_HH-MM-SS_RO<parcela>_..._COPIE.jpg`, owner
+`vlgps659@gmail.com` (o unealtă diferită de "conota", probabil de validare parcele APIA — nu telefonul
+utilizatorului). Tipul ăsta de nume nu e nou (829 de intrări "COPIE" mai vechi, din august, sunt deja pe
+hartă cu coordonate valide), dar **acest batch specific (17/18/22 sept 2026, toate încărcate deodată pe
+22 sept ~18:1x-18:26 UTC) are GPS IFD-ul din EXIF complet zero (toți octeții din zona GPS IFD literal
+`0x00`, verificat pe fișier întreg, nu doar prefix) și NU are deloc bloc XMP** (spre deosebire de bug-ul
+similar din 21 sept, documentat mai jos, unde XMP conținea coordonatele reale) — verificat pe eșantioane
+din 260917 și din 260922, descărcând fișierul întreg (~0.8-1.4 MB, deci nu e problemă de prefix/Range).
+Rezultat: din 235 de poze COPIE unice (după dedup) găsite în cele 3 foldere, GPS extras a fost `(0.0,
+0.0)` pentru toate 235 — tratat ca "fără GPS", sărit de la adăugare pe hartă (nu au fost adăugate cu
+coordonate false).
+
+**Dacă apare din nou** (folder viitor cu poze COPIE toate cu GPS zero): verifică întâi dacă e același
+fenomen (grep manual după `GPSLatitude=` pe fișierul întreg descărcat — nu doar pe un prefix, ca să
+excluzi problema de trunchiere) înainte să presupui alt bug. Momentan pare o problemă la sursă (unealta
+`vlgps659`), nu ceva reparabil din partea noastră — nu există GPS de recuperat în fișier. Dacă la un
+moment dat poze COPIE noi au din nou GPS valid (ca cele 829 vechi), nu presupune că bug-ul ăsta persistă
+pe termen nelimitat — verifică empiric la fiecare folder nou.
+
+## Limitare descoperită pe 22 sept 2026: nu se pot trash-ui fișiere Drive ale altui cont (owner diferit)
+
+La folderele 260917/260918/260922 s-au găsit poze COPIE duplicate exact (același titlu, ID-uri Drive
+diferite) — 104 duplicate doar în 260917 (fiecare din cele 110 poze unice era încărcată de 2 ori, cu
+excepția a 6 care aveau o singură copie). Am încercat să le trash-uim cu tool-ul MCP `trash_file`, dar
+**toate apelurile au eșuat cu "The caller does not have permission"**, deși `nic.mol@gmail.com` (contul
+autentificat pe MCP) e OWNER pe folderul 260917 însuși. Cauza: fișierele COPIE sunt deținute de un cont
+diferit (`vlgps659@gmail.com`), iar `get_file_permissions` pe unul dintre ele arată doar
+`owner: vlgps659@gmail.com` și `anyone: reader` — nici o permisiune explicită pentru `nic.mol`. Testat
+și alternative: `update_file` cu `title` nou (rename) **funcționează** (deci există un anumit acces de
+scriere pe metadate), dar `update_file` cu `parentId` nou (mutare în alt folder) **eșuează la fel** cu
+"permission" — deci nu există nicio cale prin API-ul MCP disponibil de a scoate/șterge fișierele astea
+din folder. (Am verificat că `trash_file` funcționează normal pe fișiere/foldere deținute chiar de
+`nic.mol` — deci nu e un bug general al tool-ului.)
+
+**Concluzie practică:** dacă apar iar duplicate în poze COPIE (owner `vlgps659` sau alt cont diferit de
+`nic.mol`), NU presupune că le poți trash-ui automat — testează întâi cu un singur fișier; dacă eșuează
+la fel, sari peste pasul de ștergere efectivă din Drive, dar tot exclude duplicatele din `data.geojson.js`
+(păstrează o singură intrare per titlu unic, cea cu `createdTime` mai vechi) ca să nu apară puncte
+duplicate pe hartă. Raportează utilizatorului lista exactă de ID-uri duplicate găsite, ca să le poată
+șterge manual din Drive (ca owner al contului `vlgps659`, sau cerând owner-ului acelui cont s-o facă) —
+UI-ul web Drive ar putea permite acțiuni pe care API-ul (cu scope-ul curent) nu le permite, deci merită
+încercat manual înainte de a presupune că ștergerea e complet imposibilă.
 
 ## Decizii deja luate (nu re-întreba, doar aplică)
 
