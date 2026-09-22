@@ -35,25 +35,20 @@ nu e nevoie de o căutare mai largă în tot Drive-ul.
 
 ## Ultimul folder procesat
 
-**260917** (poze "geofoto"/COPIE) — reprocesat pe 22 sept 2026, a doua oară aceeași zi. Utilizatorul a
-re-încărcat/curățat manual pozele COPIE din 260917 în Drive; la reverificare, cele 104 perechi de
-duplicate exacte documentate mai jos ("Limitare... nu se pot trash-ui...") NU mai există — folderul are
-acum exact 105 poze COPIE unice (ID-uri Drive noi față de cele din prima trecere), plus cele 56 poze
-"conota" neschimbate. Toate cele 105 poze COPIE sunt acum pe hartă (`folder: "260917"`), coordonate
-obținute prin citire vizuală a overlay-ului text din imagine (vezi secțiunea nouă de mai jos) — nu din
-EXIF/XMP, care rămân goale la acest lot. 260918 și 260922 (poze COPIE) NU au fost reatinse la această
-sesiune — rămân cum erau (fără GPS pe hartă, per secțiunea de bug de mai jos), utilizatorul a cerut
-explicit doar 260917.
+**260917 + 260918 + 260922** — toate trei complet procesate pe 22 sept 2026 (260917 reprocesat, apoi
+260918/260922 completate la o sesiune ulterioară aceeași zi), ambele tipuri de poze incluse:
+- poze "conota" (`YYYYMMDD_HHMMSS.jpg`): 260917 (56), 260918 (52), 260922 (9) — pe hartă din prima trecere,
+  coordonate din EXIF normal.
+- poze "geofoto"/COPIE (`DD-MM-2026_HH-MM-SS_RO<parcela>_..._COPIE.jpg`, owner `vlgps659@gmail.com`):
+  260917 (105), 260918 (105), 260922 (20) — toate 230 unice pe hartă, coordonate obținute prin **citire
+  vizuală a overlay-ului text din imagine** (vezi secțiunea "Metoda de citire vizuală" de mai jos) —
+  verificat empiric din nou la 260918/260922 (2 eșantioane per folder, descărcare completă + grep
+  `GPSLatitude=`) că EXIF e complet zero și nu există bloc XMP, exact ca la 260917, deci s-a sărit direct
+  la metoda vizuală pentru toate cele 125 poze COPIE din 260918+260922. NU s-au găsit duplicate în
+  260918/260922 (verificat, 0 titluri repetate în fiecare folder).
 
-**260922** (22 sept 2026, prima trecere) — Poze "conota" (`YYYYMMDD_HHMMSS.jpg`): 260917 (56), 260918
-(52) și 260922 (9) sunt toate pe hartă. **Important:** cele trei foldere conțin și un al doilea tip de
-poze pe care utilizatorul le numește aplicația "geofoto", format `DD-MM-2026_HH-MM-SS_RO<parcela>_..._COPIE.jpg`,
-owner `vlgps659@gmail.com` (altă unealtă, nu telefonul utilizatorului). La prima trecere (22 sept),
-NICIUNA din cele 110 (260917) + 105 (260918) + 20 (260922) poze COPIE unice n-a putut fi pusă pe hartă
-din EXIF/XMP (vezi bug mai jos) — dar 260917 a fost rezolvat ulterior prin citire vizuală, vezi paragraful
-de mai sus. 260918/260922 rămân neprocesate (fără GPS pe hartă) până la o cerere explicită a
-utilizatorului. Vezi git log pentru istoricul exact al folderelor incluse deja (mesajele de commit sunt
-de forma `actualizare date: 260902` sau listează mai multe date deodată).
+Vezi git log pentru istoricul exact al folderelor incluse deja (mesajele de commit sunt de forma
+`actualizare date: 260902` sau listează mai multe date deodată).
 
 ## Flux de lucru pentru poze noi (de urmat de orice sesiune Claude viitoare)
 
@@ -172,7 +167,11 @@ fiecare imagine (aplicația "geofoto" scrie un watermark cu lat/lon direct pe po
 de 2-3 poze, deschide imaginea întreagă cu Read) înainte să tratezi un folder COPIE ca fiind cu adevărat
 fără coordonate.
 
-## Metoda de citire vizuală a coordonatelor GPS (poze "geofoto"/COPIE, folosită pe 260917 pe 22 sept 2026)
+**Actualizare 22 sept 2026 (260918+260922):** toate cele 125 poze COPIE unice din aceste două foldere au
+avut același tipar (EXIF zero, fără XMP, verificat pe eșantioane) și au fost rezolvate prin metoda vizuală
+— vezi „Ultimul folder procesat" de mai sus. Nicio poză COPIE rămasă fără GPS la acest lot.
+
+## Metoda de citire vizuală a coordonatelor GPS (poze "geofoto"/COPIE, folosită pe 260917, 260918, 260922 pe 22 sept 2026)
 
 Aplicația "geofoto" (owner fișiere `vlgps659@gmail.com`) suprapune pe fiecare poză un banner text în
 partea de jos a imaginii (fundal semi-transparent negru, text alb), cu formatul (linie cu linie):
@@ -215,6 +214,13 @@ dacă se repetă la un folder viitor, dar verifică empiric, poate varia cu vers
 Această metodă a fost necesară fiindcă EXIF/XMP nu conțin coordonate pentru acest lot (vezi bug de mai
 sus) — dacă un folder viitor are din nou EXIF/XMP goale pentru poze COPIE, verifică întâi dacă banner-ul
 vizual există (poate lipsi la alte versiuni de app) înainte de a presupune că se aplică aceeași soluție.
+
+**Capcană găsită la refolosirea pipeline-ului (260918/260922, 22 sept 2026):** dacă desenezi eticheta
+index deasupra fiecărei linii cu `ImageDraw.text`, folosește poziția `y` curentă din bucla de asamblare
+(`draw.text((5, y+3), ...)`), NU o constantă fixă (`draw.text((5, 3), ...)`) — altfel toate etichetele se
+suprapun la începutul imaginii-grid (garbled) în loc să apară fiecare deasupra rândului ei. Nu afectează
+coordonatele citite (crop-urile în sine sunt poziționate corect independent de etichetă), dar face
+etichetele ilizibile — verifică vizual primul grid generat înainte de a continua cu restul lotului.
 
 ## Limitare descoperită pe 22 sept 2026: nu se pot trash-ui fișiere Drive ale altui cont (owner diferit)
 
