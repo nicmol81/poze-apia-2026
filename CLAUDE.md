@@ -35,15 +35,25 @@ nu e nevoie de o căutare mai largă în tot Drive-ul.
 
 ## Ultimul folder procesat
 
-**260922** (22 sept 2026) — procesat pe 22 sept 2026. Poze "conota" (`YYYYMMDD_HHMMSS.jpg`): 260917 (56),
-260918 (52) și 260922 (9) sunt toate pe hartă. **Important:** cele trei foldere conțin acum și un al
-doilea tip de poze, format `DD-MM-2026_HH-MM-SS_RO<parcela>_..._COPIE.jpg`, owner `vlgps659@gmail.com`
-(altă unealtă, nu telefonul utilizatorului) — vezi secțiunea de bug de mai jos ("22 sept 2026: poze COPIE
-fără GPS recuperabil") înainte să presupui că astea trebuie doar procesate ca de obicei: la data asta,
-NICIUNA din cele 110 (260917) + 105 (260918) + 20 (260922) poze COPIE unice n-a putut fi pusă pe hartă,
-fiindcă GPS-ul lor era complet zero, fără fallback XMP. Vezi git log pentru istoricul exact al folderelor
-incluse deja (mesajele de commit sunt de forma `actualizare date: 260902` sau listează mai multe date
-deodată).
+**260917** (poze "geofoto"/COPIE) — reprocesat pe 22 sept 2026, a doua oară aceeași zi. Utilizatorul a
+re-încărcat/curățat manual pozele COPIE din 260917 în Drive; la reverificare, cele 104 perechi de
+duplicate exacte documentate mai jos ("Limitare... nu se pot trash-ui...") NU mai există — folderul are
+acum exact 105 poze COPIE unice (ID-uri Drive noi față de cele din prima trecere), plus cele 56 poze
+"conota" neschimbate. Toate cele 105 poze COPIE sunt acum pe hartă (`folder: "260917"`), coordonate
+obținute prin citire vizuală a overlay-ului text din imagine (vezi secțiunea nouă de mai jos) — nu din
+EXIF/XMP, care rămân goale la acest lot. 260918 și 260922 (poze COPIE) NU au fost reatinse la această
+sesiune — rămân cum erau (fără GPS pe hartă, per secțiunea de bug de mai jos), utilizatorul a cerut
+explicit doar 260917.
+
+**260922** (22 sept 2026, prima trecere) — Poze "conota" (`YYYYMMDD_HHMMSS.jpg`): 260917 (56), 260918
+(52) și 260922 (9) sunt toate pe hartă. **Important:** cele trei foldere conțin și un al doilea tip de
+poze pe care utilizatorul le numește aplicația "geofoto", format `DD-MM-2026_HH-MM-SS_RO<parcela>_..._COPIE.jpg`,
+owner `vlgps659@gmail.com` (altă unealtă, nu telefonul utilizatorului). La prima trecere (22 sept),
+NICIUNA din cele 110 (260917) + 105 (260918) + 20 (260922) poze COPIE unice n-a putut fi pusă pe hartă
+din EXIF/XMP (vezi bug mai jos) — dar 260917 a fost rezolvat ulterior prin citire vizuală, vezi paragraful
+de mai sus. 260918/260922 rămân neprocesate (fără GPS pe hartă) până la o cerere explicită a
+utilizatorului. Vezi git log pentru istoricul exact al folderelor incluse deja (mesajele de commit sunt
+de forma `actualizare date: 260902` sau listează mai multe date deodată).
 
 ## Flux de lucru pentru poze noi (de urmat de orice sesiune Claude viitoare)
 
@@ -152,9 +162,59 @@ coordonate false).
 **Dacă apare din nou** (folder viitor cu poze COPIE toate cu GPS zero): verifică întâi dacă e același
 fenomen (grep manual după `GPSLatitude=` pe fișierul întreg descărcat — nu doar pe un prefix, ca să
 excluzi problema de trunchiere) înainte să presupui alt bug. Momentan pare o problemă la sursă (unealta
-`vlgps659`), nu ceva reparabil din partea noastră — nu există GPS de recuperat în fișier. Dacă la un
-moment dat poze COPIE noi au din nou GPS valid (ca cele 829 vechi), nu presupune că bug-ul ăsta persistă
-pe termen nelimitat — verifică empiric la fiecare folder nou.
+`vlgps659`), nu ceva reparabil din partea noastră — nu există GPS recuperabil în EXIF/XMP pentru acest tip
+de poze. Dacă la un moment dat poze COPIE noi au din nou GPS valid (ca cele 829 vechi), nu presupune că
+bug-ul ăsta persistă pe termen nelimitat — verifică empiric la fiecare folder nou. **Actualizare 22 sept
+2026 (reprocesare 260917):** deși EXIF/XMP rămân goale, coordonatele EXISTĂ vizibil ca text suprapus pe
+fiecare imagine (aplicația "geofoto" scrie un watermark cu lat/lon direct pe poză) — vezi secțiunea
+"Metoda de citire vizuală a coordonatelor GPS" de mai jos. Deci "fără GPS recuperabil" înseamnă doar
+"fără GPS recuperabil automat din EXIF/XMP", nu "fără GPS deloc" — verifică întâi vizual (pe un eșantion
+de 2-3 poze, deschide imaginea întreagă cu Read) înainte să tratezi un folder COPIE ca fiind cu adevărat
+fără coordonate.
+
+## Metoda de citire vizuală a coordonatelor GPS (poze "geofoto"/COPIE, folosită pe 260917 pe 22 sept 2026)
+
+Aplicația "geofoto" (owner fișiere `vlgps659@gmail.com`) suprapune pe fiecare poză un banner text în
+partea de jos a imaginii (fundal semi-transparent negru, text alb), cu formatul (linie cu linie):
+```
+<cod parcelă>
+<cod parcelă>
+DD/MM/AAAA HH:MM
+<LAT>, <LON>
+Altitudine: <n>
+ Orientare: <N/S/E/V/...>
+Versiune app: <x.y.z> - DD/MM/AAAA
+```
+Linia a 4-a e coordonatele GPS reale, zecimale semnate, format `lat, lon` (ex. `44.8016237,
+24.3419112`), separate de virgulă+spațiu. Verificat pe 3 poze eșantion din 260917: valorile citite
+vizual coincid exact cu timestamp-ul din numele fișierului și sunt plauzibile geografic (zona parcelelor
+APIA din proiect). Poza are rezoluție tipică 1080×1920 (portret); banner-ul ocupă aproximativ ultimii
+22% din înălțime (`y` de la `0.78*H` la `H`), iar linia de coordonate e la aproximativ `0.335`–`0.44`
+din înălțimea acelui banner (deci `y` absolut ≈ `0.855*H`–`0.87*H`) — utilă ca reper pentru crop automat
+dacă se repetă la un folder viitor, dar verifică empiric, poate varia cu versiunea aplicației
+(`Versiune app` apărea `4.1.1 - 05/08/2026` pe eșantioanele verificate).
+
+**Flux folosit pentru procesarea în masă a 105 poze (eficient, fără să citească 105 imagini întregi):**
+1. Descarcă fiecare poză *întreagă* (nu doar prefixul de 256 KB — banner-ul e la finalul fișierului,
+   dincolo de zona EXIF) direct prin `curl` pe link-ul public (`https://drive.google.com/uc?export=download&id=<FILE_ID>`,
+   fără Range) — NU prin tool-ul MCP `download_file_content` (poze de ~1-1.4 MB fiecare tot depășesc
+   limita de tokeni per apel a MCP-ului quando codate base64; curl direct e gratuit ca tokeni și mult
+   mai rapid).
+2. Cu Pillow (`pip install pillow` — a funcționat pe mașina folosită la această sesiune, deși nu era
+   instalat implicit; vezi nota generală despre mediu mai jos) decupează doar linia de coordonate din
+   fiecare poză (banda îngustă descrisă mai sus), apoi asamblează un "grid" compus din mai multe poze
+   (10-15) stivuite vertical într-o singură imagine JPEG, cu un index numeric desenat lângă fiecare
+   linie (`ImageDraw` + `DejaVuSans-Bold.ttf`, disponibil implicit în `/usr/share/fonts/truetype/dejavu/`).
+3. Citește (tool `Read`, vizual) fiecare imagine-compus (nu poza originală) — reduce numărul de citiri
+   de la 105 la ~9, cu text perfect lizibil la lățime completă (1080px). Verifică acuratețea pe minim 3
+   eșantioane comparând cu citirea manuală a pozei întregi înainte de a te baza pe pipeline pe tot lotul
+   (verificat pe acest folder: 3/3 eșantioane identice).
+4. Notează indexul din grid → mapează înapoi la `file_id`/`title` printr-un tabel index→id salvat
+   separat (ordine deterministă, ex. sortată după `title`).
+
+Această metodă a fost necesară fiindcă EXIF/XMP nu conțin coordonate pentru acest lot (vezi bug de mai
+sus) — dacă un folder viitor are din nou EXIF/XMP goale pentru poze COPIE, verifică întâi dacă banner-ul
+vizual există (poate lipsi la alte versiuni de app) înainte de a presupune că se aplică aceeași soluție.
 
 ## Limitare descoperită pe 22 sept 2026: nu se pot trash-ui fișiere Drive ale altui cont (owner diferit)
 
@@ -179,6 +239,15 @@ duplicate pe hartă. Raportează utilizatorului lista exactă de ID-uri duplicat
 șterge manual din Drive (ca owner al contului `vlgps659`, sau cerând owner-ului acelui cont s-o facă) —
 UI-ul web Drive ar putea permite acțiuni pe care API-ul (cu scope-ul curent) nu le permite, deci merită
 încercat manual înainte de a presupune că ștergerea e complet imposibilă.
+
+**Actualizare 22 sept 2026 (reverificare 260917):** utilizatorul a confirmat că a rezolvat manual
+problema (probabil șters/reîncărcat prin UI-ul web Drive, cont `vlgps659`). La reverificarea completă a
+folderului 260917 (toate paginile, 161 fișiere unice), cele 104 perechi de duplicate documentate mai sus
+NU mai existau — exact 105 titluri COPIE, fiecare cu un singur ID Drive (ID-uri noi, `createdTime` de pe
+22 sept ~19:32 UTC, diferite de cele vechi listate mai sus care nu mai există în folder). Deci limitarea
+API-ului MCP (nu poți trash-ui fișiere ale altui owner) rămâne valabilă ca fapt tehnic, dar nu mai e un
+blocaj practic pentru acest folder — utilizatorul a putut rezolva pe altă cale. Nu presupune că e rezolvat
+și pentru 260918/260922 (neverificate la această sesiune) sau pentru foldere viitoare.
 
 ## Decizii deja luate (nu re-întreba, doar aplică)
 
