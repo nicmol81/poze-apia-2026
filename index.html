@@ -58,6 +58,14 @@
   .swatch.square { border-radius: 2px; }
   .leaflet-popup-content a { color: #1a73e8; }
   .total { padding: 8px 12px; color: #555; border-top: 1px solid #eee; font-size: 12px; }
+
+  .leaflet-tooltip.photo-preview-tooltip {
+    padding: 3px; background: #fff; border: 1px solid rgba(0,0,0,.25);
+    box-shadow: 0 1px 6px rgba(0,0,0,.3);
+  }
+  .photo-preview-tooltip img {
+    display: block; max-width: 180px; max-height: 180px; border-radius: 3px;
+  }
 </style>
 </head>
 <body>
@@ -104,6 +112,11 @@ const cameraIcon = L.divIcon({
 });
 
 const allBounds = [];
+
+function driveFileId(link) {
+  const m = /\/d\/([^/]+)/.exec(link || '');
+  return m ? m[1] : null;
+}
 
 // ---- Parcele (poligoane) -- adaugate primele, ca sa stea sub markerii de poze ----
 // grupul featureGroup al fiecarei ferme ramane MEREU pe harta; vizibilitatea per-parcela
@@ -216,6 +229,13 @@ for (const folder of folderNames) {
     const name = feat.properties.name;
     const link = feat.properties.link;
     m.bindPopup(`<b>${name}</b><br><a href="${link}" target="_blank" rel="noopener">Deschide poza in Drive</a>`);
+    const fileId = driveFileId(link);
+    if (fileId) {
+      m.bindTooltip(
+        `<img src="https://drive.google.com/thumbnail?id=${fileId}&sz=w220" loading="lazy" alt="">`,
+        { direction: 'top', offset: [0, -8], opacity: 1, className: 'photo-preview-tooltip' }
+      );
+    }
     cluster.addLayer(m);
     layers.push({ layer: m, name, link });
     allBounds.push([lat, lon]);
