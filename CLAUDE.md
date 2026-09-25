@@ -35,17 +35,17 @@ nu e nevoie de o căutare mai largă în tot Drive-ul.
 
 ## Ultimul folder procesat
 
-**260917 + 260918 + 260922** — toate trei complet procesate pe 22 sept 2026 (260917 reprocesat, apoi
-260918/260922 completate la o sesiune ulterioară aceeași zi), ambele tipuri de poze incluse:
-- poze "conota" (`YYYYMMDD_HHMMSS.jpg`): 260917 (56), 260918 (52), 260922 (9) — pe hartă din prima trecere,
-  coordonate din EXIF normal.
+**260917 + 260918 + 260922 + 260923** — toate patru complet procesate (primele trei pe 22 sept 2026,
+260923 pe 25 sept 2026), ambele tipuri de poze incluse:
+- poze "conota" (`YYYYMMDD_HHMMSS.jpg`): 260917 (56), 260918 (52), 260922 (9), 260923 (9) — pe hartă din
+  prima trecere, coordonate din EXIF normal (260923 nu a avut probleme, EXIF valid pe toate 9).
 - poze "geofoto"/COPIE (`DD-MM-2026_HH-MM-SS_RO<parcela>_..._COPIE.jpg`, owner `vlgps659@gmail.com`):
-  260917 (105), 260918 (105), 260922 (20) — toate 230 unice pe hartă, coordonate obținute prin **citire
-  vizuală a overlay-ului text din imagine** (vezi secțiunea "Metoda de citire vizuală" de mai jos) —
-  verificat empiric din nou la 260918/260922 (2 eșantioane per folder, descărcare completă + grep
-  `GPSLatitude=`) că EXIF e complet zero și nu există bloc XMP, exact ca la 260917, deci s-a sărit direct
-  la metoda vizuală pentru toate cele 125 poze COPIE din 260918+260922. NU s-au găsit duplicate în
-  260918/260922 (verificat, 0 titluri repetate în fiecare folder).
+  260917 (105), 260918 (105), 260922 (20), 260923 (16) — toate 246 unice pe hartă, coordonate obținute
+  prin **citire vizuală a overlay-ului text din imagine** (vezi secțiunea "Metoda de citire vizuală" de
+  mai jos) — verificat empiric la fiecare folder (inclusiv 260923) că EXIF e complet zero și nu există
+  bloc XMP, deci s-a sărit direct la metoda vizuală. NU s-au găsit duplicate în niciunul din cele patru
+  foldere (verificat, 0 titluri repetate per folder) — problema duplicatelor a apărut o singură dată,
+  doar în 260917, și a fost rezolvată manual de proprietar în Drive.
 
 Vezi git log pentru istoricul exact al folderelor incluse deja (mesajele de commit sunt de forma
 `actualizare date: 260902` sau listează mai multe date deodată).
