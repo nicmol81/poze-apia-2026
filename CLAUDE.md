@@ -35,17 +35,18 @@ nu e nevoie de o căutare mai largă în tot Drive-ul.
 
 ## Ultimul folder procesat
 
-**260917 + 260918 + 260922 + 260923** — toate patru complet procesate (primele trei pe 22 sept 2026,
-260923 pe 25 sept 2026), ambele tipuri de poze incluse:
-- poze "conota" (`YYYYMMDD_HHMMSS.jpg`): 260917 (56), 260918 (52), 260922 (9), 260923 (9) — pe hartă din
-  prima trecere, coordonate din EXIF normal (260923 nu a avut probleme, EXIF valid pe toate 9).
+**260917 + 260918 + 260922 + 260923 + 261005** — toate cinci complet procesate (primele trei pe 22 sept
+2026, 260923 pe 25 sept 2026, 261005 pe 5 oct 2026), ambele tipuri de poze incluse:
+- poze "conota" (`YYYYMMDD_HHMMSS.jpg`): 260917 (56), 260918 (52), 260922 (9), 260923 (9), 261005 (35) —
+  pe hartă din prima trecere, coordonate din EXIF normal.
 - poze "geofoto"/COPIE (`DD-MM-2026_HH-MM-SS_RO<parcela>_..._COPIE.jpg`, owner `vlgps659@gmail.com`):
   260917 (105), 260918 (105), 260922 (20), 260923 (16) — toate 246 unice pe hartă, coordonate obținute
   prin **citire vizuală a overlay-ului text din imagine** (vezi secțiunea "Metoda de citire vizuală" de
-  mai jos) — verificat empiric la fiecare folder (inclusiv 260923) că EXIF e complet zero și nu există
-  bloc XMP, deci s-a sărit direct la metoda vizuală. NU s-au găsit duplicate în niciunul din cele patru
-  foldere (verificat, 0 titluri repetate per folder) — problema duplicatelor a apărut o singură dată,
-  doar în 260917, și a fost rezolvată manual de proprietar în Drive.
+  mai jos). **261005 NU a avut deloc poze geofoto/COPIE** — doar cele 35 conota, toate cu EXIF valid; nu
+  presupune că fiecare folder are neapărat și un set COPIE, verifică mereu ce tipuri de nume/owner apar
+  efectiv în folder înainte de a presupune care metodă se aplică. NU s-au găsit duplicate în niciunul din
+  cele cinci foldere (verificat, 0 titluri repetate per folder) — problema duplicatelor a apărut o
+  singură dată, doar în 260917, și a fost rezolvată manual de proprietar în Drive.
 
 Vezi git log pentru istoricul exact al folderelor incluse deja (mesajele de commit sunt de forma
 `actualizare date: 260902` sau listează mai multe date deodată).
