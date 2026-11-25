@@ -35,8 +35,15 @@ nu e nevoie de o căutare mai largă în tot Drive-ul.
 
 ## Ultimul folder procesat
 
-**260917 + 260918 + 260922 + 260923 + 261005** — toate cinci complet procesate (primele trei pe 22 sept
-2026, 260923 pe 25 sept 2026, 261005 pe 5 oct 2026), ambele tipuri de poze incluse:
+**260917 + 260918 + 260922 + 260923 + 261005 + 261125** — toate șase complet procesate (primele trei pe
+22 sept 2026, 260923 pe 25 sept 2026, 261005 pe 5 oct 2026, 261125 pe 25 nov 2026).
+
+**261125 e un caz special** (vezi secțiunea nouă de mai jos, "Caz nou 25 nov 2026"): doar 3 poze, nume
+`mcm 131a poza1/2/3.jpeg` (nu urmează niciun pattern existent), fără EXIF deloc (nici măcar placeholder
+zero — `None` complet, verificat pe fișierul întreg). Coordonate citite vizual dintr-un overlay Conota
+diferit de cel documentat deja (vezi mai jos). Toate 3 adăugate cu succes.
+
+Pentru primele cinci foldere, ambele tipuri de poze incluse:
 - poze "conota" (`YYYYMMDD_HHMMSS.jpg`): 260917 (56), 260918 (52), 260922 (9), 260923 (9), 261005 (35) —
   pe hartă din prima trecere, coordonate din EXIF normal.
 - poze "geofoto"/COPIE (`DD-MM-2026_HH-MM-SS_RO<parcela>_..._COPIE.jpg`, owner `vlgps659@gmail.com`):
@@ -222,6 +229,40 @@ index deasupra fiecărei linii cu `ImageDraw.text`, folosește poziția `y` cure
 suprapun la începutul imaginii-grid (garbled) în loc să apară fiecare deasupra rândului ei. Nu afectează
 coordonatele citite (crop-urile în sine sunt poziționate corect independent de etichetă), dar face
 etichetele ilizibile — verifică vizual primul grid generat înainte de a continua cu restul lotului.
+
+## Caz nou 25 nov 2026: poze individuale, redenumite manual, fără EXIF, cu overlay Conota diferit
+
+Utilizatorul a dat de data asta linkul direct către un folder Drive (`261125`, copil normal al
+folderului-părinte, dar primit ca link în loc de descoperit prin listare) cu doar **3 poze**, nume
+`mcm 131a poza1.jpeg` / `poza2.jpeg` / `poza3.jpeg` — un pattern de nume complet nou (nu `YYYYMMDD_HHMMSS`,
+nu `DD-MM-2026_..._COPIE`), owner `nic.mol@gmail.com` (proprietarul, nu `vlgps659`). Mărime fișier mică
+(~400-540 KB, similar cu pozele "geofoto", mult sub cele ~6 MB tipice pozelor conota nealterate).
+
+`fetch_gps_fast.py`/`gps_exif.py` au întors `None` (nu `(0.0, 0.0)`) — verificat și pe fișierul întreg
+descărcat complet, nu doar pe prefix: **EXIF lipsește complet**, nu e doar un GPS IFD placeholder zero.
+Cauza cea mai probabilă: utilizatorul a extras/redenumit manual pozele astea dintr-un folder zilnic mai
+mare înainte să le pună în acest folder separat (ex. le-a trimis prin WhatsApp, le-a editat sau salvat
+din galerie altfel decât upload direct din app), proces care strips EXIF-ul.
+
+Totuși, pozele au un overlay text vizibil (ca la metoda de citire vizuală de mai sus), dar **format diferit
+de cel documentat pentru poze "geofoto"**: logo "Captured with Conota - Camera for work" sus-dreapta,
+busolă+azimut jos-dreapta, și jos-stânga, pe fundal semi-transparent, trei linii:
+```
+DD.MM.AAAA HH:MM
+<LAT>, <LON>
+<stradă/drum>, <localitate>
+```
+(linia a 2-a = coordonatele, format `lat, lon` zecimal cu virgulă+spațiu, la fel ca la "geofoto"). Verificat
+pe toate cele 3 poze — coordonatele citite vizual sunt foarte apropiate între ele (aceeași parcelă,
+diferențe de ordinul 0.0001°), ceea ce confirmă acuratețea citirii. Fiind doar 3 poze, citite direct cu
+`Read` pe imaginea întreagă, fără pipeline de grid (inutil sub ~10 poze).
+
+**De reținut pentru viitor:** dacă apare un folder cu poze foarte puține, nume atipice (nu
+`YYYYMMDD_HHMMSS`, nu `..._COPIE`), și fără GPS deloc (nici (0.0,0.0), ci `None`), ia în calcul ipoteza
+asta — poze individuale extrase manual dintr-un set mai mare — și verifică vizual overlay-ul înainte să
+presupui că nu există deloc coordonate. Overlay-ul "Conota" normal (pe pozele cu EXIF valid) nu se vede
+de obicei fiindcă GPS-ul e deja în EXIF și nu mai trebuie citit vizual — dar când EXIF-ul lipsește, acest
+overlay devine sursa de rezervă, la fel ca banner-ul aplicației "geofoto".
 
 ## Limitare descoperită pe 22 sept 2026: nu se pot trash-ui fișiere Drive ale altui cont (owner diferit)
 
